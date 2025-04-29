@@ -1,47 +1,45 @@
-name: Flutter Integration Test
+name: Run Integration Tests on Emulator
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  integration_test:
+  build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      # Step 1: Set up Android SDK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
         with:
-          flutter-version: "3.13.0"
+          sdk-version: '35'
+          ndk-version: '23.1.7779620'
 
-      - name: Disable Flutter analytics
+      # Step 2: Install required system images and platform tools
+      - name: Install required system images and platform tools
         run: |
-          flutter config --no-analytics
-          flutter --disable-telemetry
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "system-images;android-35;google_apis;arm64-v8a"
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;30.0.3"
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Accept Android Licenses
-        run: yes | flutter doctor --android-licenses
-
-      - name: Create Android emulator
+      # Step 3: Create the AVD (Android Virtual Device)
+      - name: Create Android Emulator
         run: |
-          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "system-images;android-35;google_apis;arm64-v8a"
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-35;google_apis;arm64-v8a" --device "pixel_5"
+          echo no | avdmanager create avd -n test -k "system-images;android-35;google_apis;arm64-v8a" -d "pixel_5" --force
 
-      - name: Start emulator (disable HVF)
+      # Step 4: Start the Android Emulator
+      - name: Start Emulator (disable HVF)
         run: |
-          nohup $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -no-accel &
-          sleep 60
+          nohup $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-audio -no-window -no-accel -gpu swiftshader_indirect &
+          sleep 120  # Increase wait time to ensure emulator starts up
           adb wait-for-device
           adb shell input keyevent 82
+          # Check if the emulator is running
+          emulator -list-avds
+          adb devices
 
+      # Step 5: Run Integration Tests
       - name: Run integration tests
-        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart
+        run: |
+          flutter test integration_test
