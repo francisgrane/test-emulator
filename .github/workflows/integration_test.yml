@@ -1,0 +1,41 @@
+name: Flutter Integration Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  integration_test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.13.0"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Accept Android Licenses
+        run: yes | flutter doctor --android-licenses
+
+      - name: Create Android emulator
+        run: |
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "system-images;android-30;google_apis;x86_64"
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+
+      - name: Start emulator
+        run: |
+          nohup $ANDROID_HOME/emulator/emulator -avd test -no-snapshot -no-window &
+          sleep 60
+          adb wait-for-device
+          adb shell input keyevent 82
+
+      - name: Run integration test
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart
