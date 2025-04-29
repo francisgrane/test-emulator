@@ -1,3 +1,14 @@
+name: your_flutter_project
+description: A new Flutter project.
+
+environment:
+  sdk: ">=3.1.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # ... your other dependencies
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
