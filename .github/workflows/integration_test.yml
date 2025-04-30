@@ -42,13 +42,12 @@ jobs:
           # Verify the directory structure
           ls -la $ANDROID_SDK_ROOT
 
-          # Ensure the correct location of cmdline-tools and move files if necessary
-          if [ ! -d "$ANDROID_SDK_ROOT/cmdline-tools" ]; then
-            echo "Creating cmdline-tools directory..."
-            mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          # Ensure correct structure by moving the necessary files
+          if [ -d "$ANDROID_SDK_ROOT/cmdline-tools/tools/bin" ]; then
+            echo "Found existing 'tools' directory, moving to 'latest'"
+            mv $ANDROID_SDK_ROOT/cmdline-tools/tools/* $ANDROID_SDK_ROOT/cmdline-tools/
+            rm -rf $ANDROID_SDK_ROOT/cmdline-tools/tools
           fi
-          mv $ANDROID_SDK_ROOT/cmdline-tools*/bin/* $ANDROID_SDK_ROOT/cmdline-tools/
-          rm -rf $ANDROID_SDK_ROOT/cmdline-tools*/bin
 
           # Accept licenses and install necessary SDK components
           yes | $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager --licenses
