@@ -29,7 +29,7 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Install Android command line tools
+      - name: Install Android SDK command-line tools
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-mac-9477386_latest.zip
@@ -37,7 +37,7 @@ jobs:
           mv $ANDROID_SDK_ROOT/cmdline-tools/temp/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
           rm -rf $ANDROID_SDK_ROOT/cmdline-tools/temp sdk-tools.zip
 
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/cmdline-tools/bin" >> $GITHUB_PATH
           echo "$ANDROID_SDK_ROOT/emulator" >> $GITHUB_PATH
           echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
 
