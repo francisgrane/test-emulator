@@ -31,39 +31,34 @@ jobs:
 
       - name: Install Android SDK command-line tools
         run: |
-          # Create Android SDK directory if it doesn't exist
-          mkdir -p $ANDROID_SDK_ROOT
-          
-          # Download and unzip command-line tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+
+          # Download and unzip the command line tools
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-mac-9477386_latest.zip
-          unzip sdk-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+          unzip sdk-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools/temp
           rm sdk-tools.zip
 
-          # Check and ensure directory structure
-          ls -la $ANDROID_SDK_ROOT/cmdline-tools
+          # Move into correct directory structure
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+          mv $ANDROID_SDK_ROOT/cmdline-tools/temp/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest
 
-          # Set up sdkmanager to be correctly located
-          if [ ! -d "$ANDROID_SDK_ROOT/cmdline-tools/latest" ]; then
-            mv $ANDROID_SDK_ROOT/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest
-          fi
-          
-          # Accept licenses and install necessary SDK components
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "emulator" "system-images;android-30;google_apis;x86_64"
-
-      - name: Set Android SDK tools in PATH
-        run: |
-          echo "$ANDROID_SDK_ROOT/emulator" >> $GITHUB_PATH
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          # Add to PATH
           echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/emulator" >> $GITHUB_PATH
+
+      - name: Accept licenses and install SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-30" "emulator" "system-images;android-30;google_apis;x86_64"
 
       - name: Create AVD
         run: |
           echo "no" | avdmanager create avd -n $AVD_NAME -k "system-images;android-30;google_apis;x86_64" --device "pixel" --force
 
-      - name: Start emulator and wait for boot
+      - name: Start emulator
         run: |
-          nohup $ANDROID_SDK_ROOT/emulator/emulator -avd $AVD_NAME -no-audio -no-window -gpu swiftshader_indirect &
+          nohup emulator -avd $AVD_NAME -no-window -no-audio -gpu swiftshader_indirect &
           echo "Waiting for emulator to boot..."
           boot_completed=""
           until [[ "$boot_completed" == "1" ]]; do
